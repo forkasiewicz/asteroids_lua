@@ -2,7 +2,8 @@ local Vec = require("vector")
 local Line = require("line")
 
 SIZE = 0.6
-SPEED = 50
+SPEED = 15
+DRAG = 0.02
 -- rotations per sec
 ROT_SPEED = 1
 
@@ -17,32 +18,50 @@ local ship = {
 local ship_rotation = 0
 local offset = Vec.new(0, 0)
 local velocity = Vec.new(0, 0)
-local delta_time = 0
+local direction = Vec.new(0, 0)
 
 function love.load()
     offset = Vec.new(love.graphics.getDimensions()):scale(0.5)
 end
 
 function love.update(dt)
-    delta_time = dt
-    -- lerp function
-    -- offset = offset:add(destination:sub(offset):scale(dt))
+    direction = Vec.new(math.cos(ship_rotation), math.sin(ship_rotation))
 
-    offset = offset:add(velocity:scale(dt * 5))
-
-    if love.keyboard.isDown("up") then
-        local thrust = Vec.new(SPEED, 0):rot(ship_rotation)
-        velocity = velocity:add(thrust:scale(dt))
+    if love.keyboard.isDown("w") then
+        velocity = velocity:add(direction:scale(dt * SPEED))
     end
 
-    if love.keyboard.isDown("left") then
+    velocity = velocity:scale(1 - DRAG)
+    offset = offset:add(velocity)
+
+    if love.keyboard.isDown("a") then
         ship_rotation = ship_rotation - ROT_SPEED * math.pi * 2 * dt
     end
 
-    if love.keyboard.isDown("right") then
+    if love.keyboard.isDown("d") then
         ship_rotation = ship_rotation + ROT_SPEED * math.pi * 2 * dt
     end
 
+    DetectEdges()
+end
+
+function love.draw()
+    Line.new(Vec.new(0, 0), Vec.new(200, -400)):draw()
+    -- debug dot to check the center of the ship
+    -- love.graphics.circle("fill", offset.x, offset.y, 1)
+
+    -- debug line to check the current direction
+    -- Line.new(offset, Vec.new(100, 0):rot(ship_rotation):add(offset)):draw()
+
+    for _, line in ipairs(ship) do
+        line = line:scale(SIZE)
+        line = line:rot(ship_rotation)
+        line = line:addVec(offset)
+        line:draw()
+    end
+end
+
+function DetectEdges()
     if offset.x >= love.graphics.getWidth() then
         offset.x = 1
     end
@@ -57,22 +76,5 @@ function love.update(dt)
 
     if offset.y <= 0 then
         offset.y = love.graphics.getHeight()
-    end
-end
-
-function love.draw()
-    love.graphics.print(string.format("FPS: %i\ndelta_time: %f", 1 / delta_time, delta_time))
-
-    -- debug dot to check the center of the ship
-    -- love.graphics.circle("fill", offset.x, offset.y, 1)
-
-    -- debug line to check the current direction
-    -- Line.new(offset, Vec.new(100, 0):rot(ship_rotation):add(offset)):draw()
-
-    for _, line in ipairs(ship) do
-        line = line:scale(SIZE)
-        line = line:rot(ship_rotation)
-        line = line:addVec(offset)
-        line:draw()
     end
 end
