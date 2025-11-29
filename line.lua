@@ -1,5 +1,3 @@
-require("vector")
-
 local Line = {}
 Line.__index = Line
 
@@ -29,7 +27,9 @@ function Line:rot(n)
 end
 
 function Line:draw()
-    return love.graphics.line(self.vector1.x, self.vector1.y, self.vector2.x, self.vector2.y)
+    return love.graphics.line(
+        self.vector1.x, self.vector1.y, self.vector2.x, self.vector2.y
+    )
 end
 
 return Line
