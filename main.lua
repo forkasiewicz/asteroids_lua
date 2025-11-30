@@ -2,9 +2,13 @@ local Vec = require("vector")
 local Line = require("line")
 local Asteroid = require("asteroid")
 
+local pi, tau = math.pi, math.pi * 2
+
 SIZE = 0.6
 SPEED = 10
 DRAG = 3
+-- for mac
+SPEED = 20
 -- rotations per sec
 ROT_SPEED = 1
 
@@ -38,43 +42,62 @@ function love.load()
   WINDOW_HEIGHT = love.graphics.getHeight()
 
   ship.pos = WINDOW_CENTER
-  Asteroid.new(WINDOW_CENTER, 50)
-  Asteroid.new(WINDOW_CENTER, 50)
-  Asteroid.new(WINDOW_CENTER, 50)
 end
 
 local thruster = false
 local t = 0
 
+local bullets = {}
+
+local function shoot()
+  table.insert(bullets, Line.new(
+    ship.pos,
+    Vec.new(10, 0)
+    :scale(SIZE)
+    :rot(ship.rot)
+    :add(ship.pos)
+  ))
+  bullets[#bullets].pos = Vec.new(0, 0)
+  bullets[#bullets].rot = ship.rot
+end
+
 function love.update(dt)
-  for i, asteroid in ipairs(Asteroid.all) do
+  for _, asteroid in ipairs(Asteroid.all) do
     asteroid.pos = asteroid.pos:add(asteroid.speed:scale(dt))
 
-    if asteroid.pos.x >= WINDOW_WIDTH + 50
-        or asteroid.pos.y >= WINDOW_HEIGHT + 50
-        or asteroid.pos.x <= 0 - 50
-        or asteroid.pos.y <= 0 - 50 then
-      table.remove(Asteroid.all, i)
-    end
+    asteroid.pos.x = asteroid.pos.x % (WINDOW_WIDTH + 100)
+    asteroid.pos.y = asteroid.pos.y % (WINDOW_HEIGHT + 100)
+  end
+
+  for _, bullet in ipairs(bullets) do
+    bullet.pos = bullet.pos:add(Vec.new(500, 0):scale(dt):rot(bullet.rot))
+  end
+
+  -- constant timer that goes from 0-1s and resets
+  t = (t + dt) % 1
+
+  -- spawn randomly (for testing purposes only)
+  if math.random(1, 600) == 600 and #Asteroid.all < 5 then
+    Asteroid.new(50)
   end
 
   local direction = Vec.new(math.cos(ship.rot), math.sin(ship.rot))
 
   if love.keyboard.isDown("w") then
     velocity = velocity:add(direction:scale(dt * SPEED))
-    t = (t + dt) % 1
-    thruster = true
   end
+
+  thruster = love.keyboard.isDown("w")
 
   velocity = velocity:scale(1 - (DRAG * dt))
   ship.pos = ship.pos:add(velocity)
 
   if love.keyboard.isDown("a") then
-    ship.rot = ship.rot - ROT_SPEED * math.pi * 2 * dt
+    ship.rot = ship.rot - ROT_SPEED * tau * dt
   end
 
   if love.keyboard.isDown("d") then
-    ship.rot = ship.rot + ROT_SPEED * math.pi * 2 * dt
+    ship.rot = ship.rot + ROT_SPEED * tau * dt
   end
 
   -- teleport the ship to edges
@@ -82,13 +105,17 @@ function love.update(dt)
   ship.pos.y = ship.pos.y % WINDOW_HEIGHT
 end
 
-function love.keyreleased(key)
-  if key == "w" then
-    thruster = false
+function love.keypressed(key)
+  if key == "space" then
+    shoot()
   end
 end
 
 function love.draw()
+  -- love.graphics.rectangle("line", 150, 150, WINDOW_WIDTH - 300, WINDOW_HEIGHT - 300)
+  -- love.graphics.print(t)
+
+  -- draw thruster
   local on = math.floor(t / 0.08) % 2 == 1
   if thruster then
     if on then
@@ -99,12 +126,24 @@ function love.draw()
   end
 
   for _, line in ipairs(ship) do
-    line = line:scale(SIZE):rot(ship.rot):addVec(ship.pos):draw()
+    line = line
+        :scale(SIZE)
+        :rot(ship.rot)
+        :addVec(ship.pos)
+        :draw()
   end
 
   for _, asteroid in ipairs(Asteroid.all) do
     for _, line in ipairs(asteroid) do
-      line = line:addVec(asteroid.pos):draw()
+      line = line
+          :addVec(asteroid.pos)
+          :draw()
     end
+  end
+
+  for _, bullet in ipairs(bullets) do
+    bullet = bullet
+        :addVec(bullet.pos)
+        :draw()
   end
 end
