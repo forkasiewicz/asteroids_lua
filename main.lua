@@ -1,7 +1,10 @@
 local Vec = require "vector"
 local Line = require "line"
-local Asteroid = require "asteroid"
 local Ship = require "ship"
+local Asteroid = require "asteroid"
+local Bullet = require "bullet"
+
+GAME_OVER = false
 
 SHIP_SIZE = 0.6
 SHIP_DRAG = 3
@@ -9,8 +12,9 @@ SHIP_SPEED = 20
 -- rotations per sec
 SHIP_ROT_SPEED = 1
 
+ASTEROID_SIZE = 50
 
-math.randomseed(os.time())
+BULLET_SPEED = 500
 
 WINDOW_CENTER, WINDOW_WIDTH, WINDOW_HEIGHT = nil, nil, nil
 local ship
@@ -28,26 +32,15 @@ function love.load()
   )
 end
 
-local bullets = {}
-
-local function shoot()
-  table.insert(bullets, Line.new(
-    ship.pos,
-    Vec.new(10, 0)
-    :scale(SHIP_SIZE)
-    :rot(ship.rot)
-    :add(ship.pos)
-  ))
-  bullets[#bullets].pos = Vec.new(0, 0)
-  bullets[#bullets].rot = ship.rot
-end
-
 function love.update(dt)
-  ship:update(dt)
+  if not GAME_OVER then
+    ship:update(dt)
+  end
 
+  -- debug
   -- randomly spawn an asteroid (for testing purposes only)
   if math.random(1, 600) == 600 and #Asteroid.all < 5 then
-    Asteroid.new(50)
+    Asteroid.new(ASTEROID_SIZE)
   end
 
   -- update all asteroids
@@ -55,30 +48,62 @@ function love.update(dt)
     asteroid:update(dt)
   end
 
-  for _, bullet in ipairs(bullets) do
-    bullet.pos = bullet.pos:add(Vec.new(500, 0):scale(dt):rot(bullet.rot))
+  for _, bullet in ipairs(Bullet.all) do
+    bullet:update(dt)
   end
 end
 
 function love.keypressed(key)
-  if key == "space" then
-    shoot()
+  if not GAME_OVER then
+    if key == "space" then
+      Bullet.new(ship.pos, ship.rot)
+    end
+    if key == "p" then
+      Asteroid.new(50)
+    end
   end
 end
 
 function love.draw()
-  -- debug
-  -- love.graphics.rectangle("line",
-  -- 150, 150,
-  -- WINDOW_WIDTH - 300, WINDOW_HEIGHT - 300)
+  if not GAME_OVER then
+    ship:draw()
 
-  ship:draw()
+    for _, asteroid in ipairs(Asteroid.all) do
+      for _, asteroid_line in ipairs(asteroid.lines) do
+        for _, ship_line in ipairs(ship.lines) do
+          if ship_line
+              :scale(ship.size)
+              :rot(ship.rot)
+              :addVec(ship.pos)
+              :intersects(
+                asteroid_line
+                :addVec(asteroid.pos)
+              ) then
+            asteroid.split = true
+            GAME_OVER = true
+          end
+        end
+      end
+    end
+  end
+
+  for _, asteroid in ipairs(Asteroid.all) do
+    for _, asteroid_line in ipairs(asteroid.lines) do
+      for i, bullet in ipairs(Bullet.all) do
+        if bullet.line:rot(bullet.rot):addVec(bullet.pos)
+            :intersects(asteroid_line:addVec(asteroid.pos)) then
+          asteroid.split = true
+          table.remove(Bullet.all, i)
+        end
+      end
+    end
+  end
 
   for _, asteroid in ipairs(Asteroid.all) do
     asteroid:draw()
   end
 
-  for _, bullet in ipairs(bullets) do
-    bullet = bullet:addVec(bullet.pos):draw()
+  for _, bullet in ipairs(Bullet.all) do
+    bullet:draw()
   end
 end

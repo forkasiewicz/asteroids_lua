@@ -26,6 +26,20 @@ function Line:rot(n)
   )
 end
 
+-- credit to https://stackoverflow.com/a/9997374
+function Line:intersects(line)
+  local function ccw(A, B, C)
+    return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x)
+  end
+
+  local A = self.vector1
+  local B = self.vector2
+  local C = line.vector1
+  local D = line.vector2
+
+  return ccw(A, C, D) ~= ccw(B, C, D) and ccw(A, B, C) ~= ccw(A, B, D)
+end
+
 function Line:draw()
   return love.graphics.line(
     self.vector1.x, self.vector1.y, self.vector2.x, self.vector2.y

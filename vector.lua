@@ -28,6 +28,13 @@ function Vec:rot(n)
   )
 end
 
+function Vec:distance(vector)
+  return math.sqrt(
+    (self.x - vector.x) ^ 2 +
+    (self.y - vector.y) ^ 2
+  )
+end
+
 function Vec:scale(n)
   return Vec.new(self.x * n, self.y * n)
 end
