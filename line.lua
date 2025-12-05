@@ -12,6 +12,13 @@ function Line:addVec(vector)
   )
 end
 
+function Line:subVec(vector)
+  return Line.new(
+    self.vector1:sub(vector),
+    self.vector2:sub(vector)
+  )
+end
+
 function Line:scale(n)
   return Line.new(
     self.vector1:scale(n),

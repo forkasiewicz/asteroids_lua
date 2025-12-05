@@ -1,7 +1,6 @@
 local Vec = require "vector"
 local Line = require "line"
 
-local pi, tau = math.pi, math.pi * 2
 
 local Ship = {}
 Ship.__index = Ship
@@ -28,11 +27,11 @@ function Ship.new(pos, speed, rot_speed, drag, size)
     drag           = drag,
     size           = size,
     lines          = lines,
-    thruster_lines = thruster_lines
+    thruster_lines = thruster_lines,
+    velocity       = Vec.new(0, 0)
   }, Ship)
 end
 
-local velocity = Vec.new(0, 0)
 local thruster = false
 local t = 0
 
@@ -40,20 +39,20 @@ function Ship:update(dt)
   local direction = Vec.new(math.cos(self.rot), math.sin(self.rot))
 
   if love.keyboard.isDown("w") then
-    velocity = velocity:add(direction:scale(dt * self.speed))
+    self.velocity = self.velocity:add(direction:scale(dt * self.speed))
   end
 
   thruster = love.keyboard.isDown("w")
 
-  velocity = velocity:scale(1 - (self.drag * dt))
-  self.pos = self.pos:add(velocity)
+  self.velocity = self.velocity:scale(1 - (self.drag * dt))
+  self.pos = self.pos:add(self.velocity)
 
   if love.keyboard.isDown("a") then
-    self.rot = self.rot - self.rot_speed * tau * dt
+    self.rot = self.rot - self.rot_speed * TAU * dt
   end
 
   if love.keyboard.isDown("d") then
-    self.rot = self.rot + self.rot_speed * tau * dt
+    self.rot = self.rot + self.rot_speed * TAU * dt
   end
 
   -- constant timer that goes from 0-1s and resets

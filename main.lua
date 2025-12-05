@@ -3,8 +3,9 @@ local Line = require "line"
 local Ship = require "ship"
 local Asteroid = require "asteroid"
 local Bullet = require "bullet"
+local Particle = require "particle"
 
-GAME_OVER = false
+PI, TAU = math.pi, math.pi * 2
 
 SHIP_SIZE = 0.6
 SHIP_DRAG = 3
@@ -16,10 +17,39 @@ ASTEROID_SIZE = 50
 
 BULLET_SPEED = 500
 
+-- credit to https://www.pixelsagas.com/?download=hyperspace
+FONT_PATH = "hyperspace.ttf"
+FONTS = {}
+
 WINDOW_CENTER, WINDOW_WIDTH, WINDOW_HEIGHT = nil, nil, nil
 local ship
+local t = 0
 
-function love.load()
+function FontSize(size)
+  for _, font in ipairs(FONTS) do
+    if font.size == size then
+      love.graphics.setFont(font.font)
+      return font.font
+    end
+  end
+  local new_font = love.graphics.newFont(FONT_PATH, size)
+  love.graphics.setFont(new_font)
+  table.insert(FONTS, { font = new_font, size = size })
+  return new_font
+end
+
+function CenterText(text, pos, size)
+  local x = FontSize(size):getWidth(text)
+  local y = FontSize(size):getHeight()
+
+  love.graphics.print(text, pos.x - (x / 2), pos.y - (y / 2))
+end
+
+function Restart()
+  math.randomseed(os.time())
+
+  Asteroid.all = {}
+
   WINDOW_CENTER = Vec.new(love.graphics.getDimensions()):scale(0.5)
   WINDOW_WIDTH = love.graphics.getWidth()
   WINDOW_HEIGHT = love.graphics.getHeight()
@@ -30,17 +60,34 @@ function love.load()
     SHIP_DRAG,
     SHIP_SIZE
   )
+
+  GAME_OVER = false
+  WAVE = 1
+  SCORE = 0
+  t = 0
+
+  for _ = 1, 4 do
+    Asteroid.new(ASTEROID_SIZE)
+  end
+end
+
+function love.load()
+  Restart()
 end
 
 function love.update(dt)
+  t = t + dt
+
   if not GAME_OVER then
     ship:update(dt)
-  end
-
-  -- debug
-  -- randomly spawn an asteroid (for testing purposes only)
-  if math.random(1, 600) == 600 and #Asteroid.all < 5 then
-    Asteroid.new(ASTEROID_SIZE)
+    if t >= 10 then
+      if #Asteroid.all < 11 then
+        WAVE = WAVE + 1
+        Asteroid.new(ASTEROID_SIZE)
+        Asteroid.new(ASTEROID_SIZE)
+      end
+      t = 0
+    end
   end
 
   -- update all asteroids
@@ -48,18 +95,23 @@ function love.update(dt)
     asteroid:update(dt)
   end
 
+  -- update all bullets
   for _, bullet in ipairs(Bullet.all) do
     bullet:update(dt)
+  end
+
+  -- update all particles
+  for _, particle in ipairs(Particle.all) do
+    particle:update(dt)
   end
 end
 
 function love.keypressed(key)
-  if not GAME_OVER then
-    if key == "space" then
+  if key == "space" then
+    if GAME_OVER then
+      Restart()
+    else
       Bullet.new(ship.pos, ship.rot)
-    end
-    if key == "p" then
-      Asteroid.new(50)
     end
   end
 end
@@ -70,34 +122,48 @@ function love.draw()
 
     for _, asteroid in ipairs(Asteroid.all) do
       for _, asteroid_line in ipairs(asteroid.lines) do
-        for _, ship_line in ipairs(ship.lines) do
-          if ship_line
-              :scale(ship.size)
-              :rot(ship.rot)
-              :addVec(ship.pos)
+        -- if bullet collides with asteroid
+        for i, bullet in ipairs(Bullet.all) do
+          if bullet.line
+              :rot(bullet.rot)
+              :addVec(bullet.pos)
               :intersects(
                 asteroid_line
                 :addVec(asteroid.pos)
               ) then
             asteroid.split = true
-            GAME_OVER = true
+            Particle.new(asteroid)
+            table.remove(Bullet.all, i)
+          end
+        end
+
+        -- if ship collides with asteroid
+        if not GAME_OVER then
+          for _, ship_line in ipairs(ship.lines) do
+            if ship_line
+                :scale(ship.size)
+                :rot(ship.rot)
+                :addVec(ship.pos)
+                :intersects(
+                  asteroid_line
+                  :addVec(asteroid.pos)
+                ) then
+              asteroid.split = true
+              Particle.new(ship, 2)
+              GAME_OVER = true
+              break
+            end
           end
         end
       end
     end
+  else
+    CenterText("GAME OVER", WINDOW_CENTER:sub(Vec.new(0, 50)), 80)
+    CenterText("PRESS SPACE TO RESTART", WINDOW_CENTER:add(Vec.new(0, 40)), 40)
   end
 
-  for _, asteroid in ipairs(Asteroid.all) do
-    for _, asteroid_line in ipairs(asteroid.lines) do
-      for i, bullet in ipairs(Bullet.all) do
-        if bullet.line:rot(bullet.rot):addVec(bullet.pos)
-            :intersects(asteroid_line:addVec(asteroid.pos)) then
-          asteroid.split = true
-          table.remove(Bullet.all, i)
-        end
-      end
-    end
-  end
+  FontSize(35)
+  love.graphics.print(string.format("WAVE: %i\nSCORE: %i", WAVE, SCORE))
 
   for _, asteroid in ipairs(Asteroid.all) do
     asteroid:draw()
@@ -105,5 +171,9 @@ function love.draw()
 
   for _, bullet in ipairs(Bullet.all) do
     bullet:draw()
+  end
+
+  for _, particle in ipairs(Particle.all) do
+    particle:draw()
   end
 end

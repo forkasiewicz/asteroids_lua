@@ -1,8 +1,6 @@
 local Vec = require "vector"
 local Line = require "line"
 
-local pi, tau = math.pi, math.pi * 2
-
 local Asteroid = {}
 Asteroid.__index = Asteroid
 
@@ -38,7 +36,7 @@ local function spawn_asteroid(margin)
   end
 end
 
-function Asteroid.new(size,
+function Asteroid.new(scale,
     --[[optional]] spawn_pos,
     --[[optional]] spawn_speed
 )
@@ -46,10 +44,10 @@ function Asteroid.new(size,
   local lines = {}
   local points = {}
   for i = 1, n do
-    local rand = math.random(size / 2, size)
+    local rand = math.random(scale / 2, scale)
     points[i] = Vec.new(rand, 0):rot(
     -- derived from 360 / n and pi / 180
-      (2 / n) * i * pi
+      (2 / n) * i * PI
     )
   end
   for i = 1, n do
@@ -66,28 +64,24 @@ function Asteroid.new(size,
     end
   end
 
-  local pos
+  local pos = spawn_pos or spawn_asteroid(100)
   local speed
 
-  if spawn_pos == nil then
-    pos = spawn_asteroid(100)
-    speed = Vec.new(
-          math.random(150, WINDOW_WIDTH - 300),
-          math.random(150, WINDOW_HEIGHT - 300)
+  if spawn_speed then
+    speed =
+        spawn_speed:scale(
+          math.random(75, 150) * 0.01):rot(math.random(-50, 50) * (PI / 180)
         )
-        :sub(pos)
-        :normalized()
-        :scale(200)
   else
-    pos = spawn_pos
-    speed = spawn_speed:scale(
-      math.random(75, 150) * 0.01):rot(math.random(-50, 50) * (pi / 180)
-    )
+    speed = Vec.new(
+      math.random(150, WINDOW_WIDTH - 300),
+      math.random(150, WINDOW_HEIGHT - 300)
+    ):sub(pos):normalized():scale(200)
   end
 
   local asteroid = setmetatable({
     pos = pos,
-    size = size,
+    scale = scale,
     speed = speed,
     lines = lines,
     split = false
@@ -100,17 +94,22 @@ end
 
 function Asteroid:update(dt)
   for i, asteroid in ipairs(Asteroid.all) do
-    if asteroid == self then
-      if self.split then
-        table.remove(Asteroid.all, i)
-        if asteroid.size == ASTEROID_SIZE / 4 then
-          table.remove(Asteroid.all, i)
-          break
-        else
-          Asteroid.new(asteroid.size / 2, asteroid.pos, asteroid.speed)
-          Asteroid.new(asteroid.size / 2, asteroid.pos, asteroid.speed)
-        end
+    if asteroid == self and self.split then
+      if asteroid.scale ~= ASTEROID_SIZE / 4 then
+        Asteroid.new(asteroid.scale / 2, asteroid.pos, asteroid.speed)
+        Asteroid.new(asteroid.scale / 2, asteroid.pos, asteroid.speed)
       end
+      table.remove(Asteroid.all, i)
+
+      -- super hacky way TODO: fix this
+      if asteroid.scale == ASTEROID_SIZE then
+        SCORE = SCORE + 20
+      elseif asteroid.scale == ASTEROID_SIZE / 2 then
+        SCORE = SCORE + 50
+      elseif asteroid.scale == ASTEROID_SIZE / 4 then
+        SCORE = SCORE + 100
+      end
+      return
     end
   end
 
