@@ -24,6 +24,7 @@ FONTS = {}
 WINDOW_CENTER, WINDOW_WIDTH, WINDOW_HEIGHT = nil, nil, nil
 local ship
 local t = 0
+local respawn_timer_max
 
 function FontSize(size)
   for _, font in ipairs(FONTS) do
@@ -45,10 +46,11 @@ function CenterText(text, pos, size)
   love.graphics.print(text, pos.x - (x / 2), pos.y - (y / 2))
 end
 
-function Restart()
+function Reset()
   math.randomseed(os.time())
 
   Asteroid.all = {}
+  Particle.all = {}
 
   WINDOW_CENTER = Vec.new(love.graphics.getDimensions()):scale(0.5)
   WINDOW_WIDTH = love.graphics.getWidth()
@@ -64,7 +66,9 @@ function Restart()
   GAME_OVER = false
   WAVE = 1
   SCORE = 0
+  LIVES = 3
   t = 0
+  respawn_timer_max = ship.respawn_timer
 
   for _ = 1, 4 do
     Asteroid.new(ASTEROID_SIZE)
@@ -72,11 +76,31 @@ function Restart()
 end
 
 function love.load()
-  Restart()
+  Reset()
 end
 
 function love.update(dt)
   t = t + dt
+
+  -- TODO: fix all this
+  if ship.respawn_timer == respawn_timer_max then
+    for _, asteroid in ipairs(Asteroid.all) do
+      if Line.new(ship.pos, asteroid.pos):len() < 200 then
+        ship.immortal = true
+      else
+        ship.immortal = false
+      end
+    end
+  end
+
+  if ship.respawn_timer > 0 then
+    ship.respawn_timer = ship.respawn_timer - dt
+  end
+
+  if ship.respawn_timer <= 0 then
+    ship.immortal = false
+  end
+  ---------------------
 
   if not GAME_OVER then
     ship:update(dt)
@@ -109,7 +133,7 @@ end
 function love.keypressed(key)
   if key == "space" then
     if GAME_OVER then
-      Restart()
+      Reset()
     else
       Bullet.new(ship.pos, ship.rot)
     end
@@ -117,6 +141,10 @@ function love.keypressed(key)
 end
 
 function love.draw()
+  if LIVES <= 0 then
+    GAME_OVER = true
+  end
+
   if not GAME_OVER then
     ship:draw()
 
@@ -148,10 +176,12 @@ function love.draw()
                   asteroid_line
                   :addVec(asteroid.pos)
                 ) then
-              asteroid.split = true
-              Particle.new(ship, 2)
-              GAME_OVER = true
-              break
+              if not ship.immortal then
+                asteroid.split = true
+                Particle.new(ship, 2)
+                ship = Ship:respawn(ship)
+                break
+              end
             end
           end
         end
@@ -159,11 +189,19 @@ function love.draw()
     end
   else
     CenterText("GAME OVER", WINDOW_CENTER:sub(Vec.new(0, 50)), 80)
-    CenterText("PRESS SPACE TO RESTART", WINDOW_CENTER:add(Vec.new(0, 40)), 40)
+    CenterText("PRESS SPACE TO RESPAWN", WINDOW_CENTER:add(Vec.new(0, 40)), 40)
   end
 
   FontSize(35)
-  love.graphics.print(string.format("WAVE: %i\nSCORE: %i", WAVE, SCORE))
+  love.graphics.print(SCORE, 10, 0)
+
+  -- TODO: remove all asteroids in spawn range and spawn new ones outside?
+  -- make the ship blink
+  for i = 1, LIVES do
+    for _, line in ipairs(ship.lines) do
+      line:rot(-(PI / 2)):addVec(Vec.new(i * 70, 120)):scale(SHIP_SIZE):draw()
+    end
+  end
 
   for _, asteroid in ipairs(Asteroid.all) do
     asteroid:draw()

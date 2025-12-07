@@ -33,6 +33,13 @@ function Line:rot(n)
   )
 end
 
+function Line:len()
+  return math.sqrt(
+    ((self.vector1.x - self.vector2.x) ^ 2) +
+    ((self.vector1.y - self.vector2.y) ^ 2)
+  )
+end
+
 -- credit to https://stackoverflow.com/a/9997374
 function Line:intersects(line)
   local function ccw(A, B, C)

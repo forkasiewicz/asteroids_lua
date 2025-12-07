@@ -21,14 +21,16 @@ function Ship.new(pos, speed, rot_speed, drag, size)
 
   return setmetatable({
     pos            = pos,
-    rot            = 0,
+    rot            = -(PI / 2),
     speed          = speed,
     rot_speed      = rot_speed,
     drag           = drag,
     size           = size,
     lines          = lines,
     thruster_lines = thruster_lines,
-    velocity       = Vec.new(0, 0)
+    velocity       = Vec.new(0, 0),
+    immortal       = true,
+    respawn_timer  = 2
   }, Ship)
 end
 
@@ -72,12 +74,25 @@ function Ship:draw()
   end
 
   for _, line in ipairs(self.lines) do
-    line = line
-        :scale(self.size)
-        :rot(self.rot)
-        :addVec(self.pos)
-        :draw()
+    if (not self.immortal) or math.floor(t / 0.08) % 2 == 1 then
+      line = line
+          :scale(self.size)
+          :rot(self.rot)
+          :addVec(self.pos)
+          :draw()
+    end
   end
+end
+
+function Ship:respawn(ship)
+  LIVES = LIVES - 1
+  return Ship.new(
+    WINDOW_CENTER,
+    ship.speed,
+    ship.rot_speed,
+    ship.drag,
+    ship.size
+  )
 end
 
 return Ship
