@@ -1,5 +1,5 @@
-local Vec = require "vector"
-local Line = require "line"
+local Vec = require "libs.vector"
+local Line = require "libs.line"
 
 local Asteroid = {}
 Asteroid.__index = Asteroid
