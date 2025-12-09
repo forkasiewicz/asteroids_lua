@@ -1,9 +1,9 @@
 local Vec = require "libs.vector"
 local Line = require "libs.line"
-local Ship = require "ship"
-local Asteroid = require "asteroid"
-local Bullet = require "bullet"
-local Particle = require "particle"
+local Particle = require "libs.particle"
+local Ship = require "src.ship"
+local Asteroid = require "src.asteroid"
+local Bullet = require "src.bullet"
 
 PI, TAU = math.pi, math.pi * 2
 
@@ -18,7 +18,7 @@ ASTEROID_SIZE = 50
 BULLET_SPEED = 500
 
 -- credit to https://www.pixelsagas.com/?download=hyperspace
-FONT_PATH = "hyperspace.ttf"
+FONT_PATH = "assets/hyperspace.ttf"
 FONTS = {}
 
 WINDOW_CENTER, WINDOW_WIDTH, WINDOW_HEIGHT = nil, nil, nil
