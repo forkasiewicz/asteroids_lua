@@ -1,6 +1,3 @@
-local Vec = require "libs.vector"
-local Line = require "libs.line"
-
 local Particle = {}
 Particle.__index = Particle
 

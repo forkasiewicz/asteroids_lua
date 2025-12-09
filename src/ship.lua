@@ -1,7 +1,6 @@
 local Vec = require "libs.vector"
 local Line = require "libs.line"
 
-
 local Ship = {}
 Ship.__index = Ship
 
