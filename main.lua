@@ -19,15 +19,15 @@ BULLET_SPEED = 500
 
 -- credit to https://www.pixelsagas.com/?download=hyperspace
 FONT_PATH = "assets/hyperspace.ttf"
-FONTS = {}
+local fonts = {}
 
 WINDOW_CENTER, WINDOW_WIDTH, WINDOW_HEIGHT = nil, nil, nil
 local ship
 local t = 0
 local respawn_timer_max
 
-function FontSize(size)
-  for _, font in ipairs(FONTS) do
+local function fontSize(size)
+  for _, font in ipairs(fonts) do
     if font.size == size then
       love.graphics.setFont(font.font)
       return font.font
@@ -35,13 +35,13 @@ function FontSize(size)
   end
   local new_font = love.graphics.newFont(FONT_PATH, size)
   love.graphics.setFont(new_font)
-  table.insert(FONTS, { font = new_font, size = size })
+  table.insert(fonts, { font = new_font, size = size })
   return new_font
 end
 
-function CenterText(text, pos, size)
-  local x = FontSize(size):getWidth(text)
-  local y = FontSize(size):getHeight()
+local function centerText(text, pos, size)
+  local x = fontSize(size):getWidth(text)
+  local y = fontSize(size):getHeight()
 
   love.graphics.print(text, pos.x - (x / 2), pos.y - (y / 2))
 end
@@ -188,11 +188,11 @@ function love.draw()
       end
     end
   else
-    CenterText("GAME OVER", WINDOW_CENTER:sub(Vec.new(0, 50)), 80)
-    CenterText("PRESS SPACE TO RESPAWN", WINDOW_CENTER:add(Vec.new(0, 40)), 40)
+    centerText("GAME OVER", WINDOW_CENTER:sub(Vec.new(0, 50)), 80)
+    centerText("PRESS SPACE TO RESPAWN", WINDOW_CENTER:add(Vec.new(0, 40)), 40)
   end
 
-  FontSize(35)
+  fontSize(35)
   love.graphics.print(SCORE, 10, 0)
 
   -- TODO: remove all asteroids in spawn range and spawn new ones outside?
