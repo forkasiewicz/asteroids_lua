@@ -82,7 +82,46 @@ end
 function love.update(dt)
   t = t + dt
 
-  -- TODO: fix all this
+  for _, asteroid in ipairs(Asteroid.all) do
+    for _, asteroid_line in ipairs(asteroid.lines) do
+      -- if bullet collides with asteroid
+      for i, bullet in ipairs(Bullet.all) do
+        if bullet.line
+            :rot(bullet.rot)
+            :addVec(bullet.pos)
+            :intersects(
+              asteroid_line
+              :addVec(asteroid.pos)
+            ) then
+          asteroid.split = true
+          Particle.new(asteroid)
+          table.remove(Bullet.all, i)
+        end
+      end
+
+      -- if ship collides with asteroid
+      if not GAME_OVER then
+        for _, ship_line in ipairs(ship.lines) do
+          if ship_line
+              :scale(ship.size)
+              :rot(ship.rot)
+              :addVec(ship.pos)
+              :intersects(
+                asteroid_line
+                :addVec(asteroid.pos)
+              ) then
+            if not ship.immortal then
+              asteroid.split = true
+              Particle.new(ship, 2)
+              ship = Ship:respawn(ship)
+              break
+            end
+          end
+        end
+      end
+    end
+  end
+
   if ship.respawn_timer == respawn_timer_max then
     for _, asteroid in ipairs(Asteroid.all) do
       if Line.new(ship.pos, asteroid.pos):len() < 200 then
@@ -100,7 +139,6 @@ function love.update(dt)
   if ship.respawn_timer <= 0 then
     ship.immortal = false
   end
-  ---------------------
 
   if not GAME_OVER then
     ship:update(dt)
@@ -147,46 +185,6 @@ function love.draw()
 
   if not GAME_OVER then
     ship:draw()
-
-    for _, asteroid in ipairs(Asteroid.all) do
-      for _, asteroid_line in ipairs(asteroid.lines) do
-        -- if bullet collides with asteroid
-        for i, bullet in ipairs(Bullet.all) do
-          if bullet.line
-              :rot(bullet.rot)
-              :addVec(bullet.pos)
-              :intersects(
-                asteroid_line
-                :addVec(asteroid.pos)
-              ) then
-            asteroid.split = true
-            Particle.new(asteroid)
-            table.remove(Bullet.all, i)
-          end
-        end
-
-        -- if ship collides with asteroid
-        if not GAME_OVER then
-          for _, ship_line in ipairs(ship.lines) do
-            if ship_line
-                :scale(ship.size)
-                :rot(ship.rot)
-                :addVec(ship.pos)
-                :intersects(
-                  asteroid_line
-                  :addVec(asteroid.pos)
-                ) then
-              if not ship.immortal then
-                asteroid.split = true
-                Particle.new(ship, 2)
-                ship = Ship:respawn(ship)
-                break
-              end
-            end
-          end
-        end
-      end
-    end
   else
     centerText("GAME OVER", WINDOW_CENTER:sub(Vec.new(0, 50)), 80)
     centerText("PRESS SPACE TO RESPAWN", WINDOW_CENTER:add(Vec.new(0, 40)), 40)
@@ -195,8 +193,6 @@ function love.draw()
   fontSize(35)
   love.graphics.print(SCORE, 10, 0)
 
-  -- TODO: remove all asteroids in spawn range and spawn new ones outside?
-  -- make the ship blink
   for i = 1, LIVES do
     for _, line in ipairs(ship.lines) do
       line:rot(-(PI / 2)):addVec(Vec.new(i * 70, 120)):scale(SHIP_SIZE):draw()

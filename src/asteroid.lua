@@ -101,7 +101,6 @@ function Asteroid:update(dt)
       end
       table.remove(Asteroid.all, i)
 
-      -- super hacky way TODO: fix this
       if asteroid.scale == ASTEROID_SIZE then
         SCORE = SCORE + 20
       elseif asteroid.scale == ASTEROID_SIZE / 2 then
