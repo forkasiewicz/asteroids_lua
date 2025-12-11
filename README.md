@@ -21,8 +21,7 @@ https://en.wikipedia.org/wiki/Rotation_matrix#In_two_dimensions
 
 I've also had great fun trying to figure out the conversion from degrees to radians to evenly disperse points around a circle to create asteroids.
 
-Another problem I've faced was trying to understand the difference between global and local coordinates of objects such as asteroids or ships. It took me quite a while to finally understand where and when to add vectors to be able to easily perform operations on them.
-
+I had trouble understanding when to convert between local and global coordinates when rotating or translating objects. The fix was to apply rotation in local space, then offset by the object’s world position.
 ## File structure:
 ### `vector.lua`:
 Vectors are simple two element tables of numbers which you can perform operations on.
