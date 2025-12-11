@@ -67,7 +67,7 @@ And my own functions:
 
 ### `conf.lua`:
 
-By design `LÖVE2D` contains a conf.lua file which specifies which modules the game should use such as `joystick` or `physics`, but it is also used to configure the default window title, and size of the game.
+By design `LÖVE2D` contains a `conf.lua` file which specifies which modules the game should use such as `joystick` or `physics`, but it is also used to configure the default window title, and size of the game.
 
 ## How to run:
 ### On MacOS:
