@@ -1,5 +1,5 @@
 # Asteroids in LÖVE2D
-#### Description:
+### Description:
 For this project I decided to try and recreate the classic Asteroids game from 1979 inside of the `LÖVE2D` engine. 
 
 The game follows a simple mechanic, and is very similar to the original Asteroids game in many aspects, except for procedural asteroid generation, and in my opinion cooler looking particle effects.
